@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Brew Log | 珈琲抽出ノート</title>
+  <style>
+    :root {
+      --bg: #f9f8f6;
+      --card: #ffffff;
+      --primary: #4a3525;
+      --accent: #b45309;
+      --text: #2c2523;
+      --muted: #78716c;
+      --border: #e7e5e4;
+      --tag-bg: #f5f5f4;
+      --chip-bg: #f5efe6;
+      --chip-text: #634832;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px 14px 40px;
+    }
+    header {
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--primary); letter-spacing: 0.02em; }
+    header span { font-size: 0.75rem; color: var(--muted); }
+
+    /* タイマーカード */
+    .timer-card {
+      background: var(--primary);
+      color: #fff;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(74, 53, 37, 0.15);
+    }
+    .timer-display { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .timer-btns { display: flex; gap: 6px; }
+    .btn-timer {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-timer.primary { background: #fff; color: var(--primary); }
+
+    /* フォームカード */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+    }
+    .form-grid { display: flex; flex-direction: column; gap: 10px; }
+    .row { display: flex; gap: 8px; }
+    .row > * { flex: 1; min-width: 0; }
+    label { font-size: 0.72rem; font-weight: 600; color: var(--muted); display: block; margin-bottom: 3px; }
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      background: #fafaf9;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); background: #fff; }
+
+    /* 豆の履歴チップ */
+    .history-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .history-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .history-chips {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .history-chips::-webkit-scrollbar { display: none; }
+    .chip {
+      background: var(--chip-bg);
+      color: var(--chip-text);
+      border: 1px solid #ebd9c8;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .chip:active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* 挽き目（Grind）ステッパーUI */
+    .stepper-container {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .stepper-btn {
+      background: #e7e5e4;
+      border: none;
+      border-radius: 8px;
+      width: 38px;
+      height: 38px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .stepper-btn:active { background: #d6d3d1; }
+    .stepper-input {
+      text-align: center;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .ratio-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* テイスティング評価スライダー */
+    .taste-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 14px;
+      background: #fafaf9;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .taste-item { display: flex; flex-direction: column; gap: 2px; }
+    .taste-item-header { display: flex; justify-content: space-between; font-size: 0.75rem; }
+    input[type="range"] { accent-color: var(--accent); margin: 0; }
+
+    .btn-submit {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    /* ログ一覧 */
+    .log-list { display: flex; flex-direction: column; gap: 10px; list-style: none; padding: 0; margin: 0; }
+    .log-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .log-header { display: flex; justify-content: space-between; align-items: baseline; }
+    .log-title { font-weight: 700; font-size: 0.95rem; color: var(--primary); }
+    .log-date { font-size: 0.72rem; color: var(--muted); }
+    .log-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+    .badge {
+      font-size: 0.7rem;
+      background: var(--tag-bg);
+      color: var(--text);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .badge.accent { background: #fef3c7; color: #92400e; }
+    .badge.grind { background: #ffedd5; color: #9a3412; font-weight: 600; }
+    .log-taste-bars {
+      display: flex;
+      gap: 10px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      border-top: 1px dashed var(--border);
+      padding-top: 6px;
+      margin-top: 2px;
+    }
+    .log-notes { font-size: 0.8rem; color: #444; line-height: 1.4; margin-top: 2px; white-space: pre-wrap; }
+    .btn-del {
+      border: none;
+      background: transparent;
+      color: #a8a29e;
+      font-size: 0.75rem;
+      align-self: flex-end;
+      cursor: pointer;
+      padding: 2px 4px;
+    }
+    .btn-del:hover { color: #ef4444; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>☕️ Brew Log</h1>
+    <span>ハンドドリップ抽出記録</span>
+  </header>
+
+  <!-- タイマー -->
+  <div class="timer-card">
+    <div>
+      <div style="font-size:0.7rem; opacity:0.8; letter-spacing:0.05em;">TIMER</div>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+    </div>
+    <div class="timer-btns">
+      <button class="btn-timer primary" id="btnTimerToggle" onclick="toggleTimer()">スタート</button>
+      <button class="btn-timer" onclick="resetTimer()">リセット</button>
+      <button class="btn-timer" onclick="stampTimer()">反映</button>
+    </div>
+  </div>
+
+  <!-- レシピ入力フォーム -->
+  <div class="card">
+    <div class="form-grid">
+      <div>
+        <label>豆の名前・銘柄・産地</label>
+        <input type="text" id="beanName" placeholder="エチオピア イルガチェフェ、中煎りブレンドなど">
+        
+        <!-- 直前履歴の選択チップ領域 -->
+        <div class="history-container" id="historyContainer" style="display:none;">
+          <span class="history-label">🕒 直前に使った豆から選ぶ:</span>
+          <div class="history-chips" id="beanChips"></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>焙煎度</label>
+          <select id="roastLevel">
+            <option value="浅煎り (Light)">浅煎り (Light)</option>
+            <option value="中煎り (Medium)" selected>中煎り (Medium)</option>
+            <option value="中深煎り (City)">中深煎り (City)</option>
+            <option value="深煎り (Dark)">深煎り (Dark)</option>
+          </select>
+        </div>
+        <div>
+          <label>挽き目 (Grind: 10〜20)</label>
+          <div class="stepper-container">
+            <button type="button" class="stepper-btn" onclick="stepGrind(-1)">−</button>
+            <input type="number" id="grindSize" class="stepper-input" value="15" min="10" max="20" step="0.5">
+            <button type="button" class="stepper-btn" onclick="stepGrind(1)">＋</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>豆の量 (g)</label>
+          <input type="number" id="coffeeDose" value="15" step="0.5" oninput="calcRatio()">
+        </div>
+        <div>
+          <label>注湯量 (ml)</label>
+          <input type="number" id="waterAmount" value="230" step="5" oninput="calcRatio()">
+        </div>
+        <div>
+          <label>湯温 (°C)</label>
+          <input type="number" id="waterTemp" value="90">
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="ratio-badge" id="ratioBadge">抽出レシオ 1 : 15.3</span>
+        <div style="width:45%;">
+          <label>抽出時間</label>
+          <input type="text" id="brewTime" placeholder="2:30">
+        </div>
+      </div>
+
+      <!-- 味の評価（スライダー） -->
+      <div>
+        <label>味覚プロファイル (1〜5)</label>
+        <div class="taste-group">
+          <div class="taste-item">
+            <div class="taste-item-header"><span>酸味 (Acidity)</span><span id="valAcidity">3</span></div>
+            <input type="range" id="tasteAcidity" min="1" max="5" value="3" oninput="valAcidity.innerText = this.value">
+          </div>
+          <div class="taste-item">
+            <div class="taste-item-header"><span>苦味 (Bitterness)</span><span id="valBitterness">3</span></div>
+            <input type="range" id="tasteBitterness" min="1" max="5" value="3" oninput="valBitterness.innerText = this.value">
+          </div>
+          <div class="taste-item">
+            <div class="taste-item-header"><span>コク (Body)</span><span id="valBody">3</span></div>
+            <input type="range" id="tasteBody" min="1" max="5" value="3" oninput="valBody.innerText = this.value">
+          </div>
+          <div class="taste-item">
+            <div class="taste-item-header"><span>香り (Aroma)</span><span id="valAroma">4</span></div>
+            <input type="range" id="tasteAroma" min="1" max="5" value="4" oninput="valAroma.innerText = this.value">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label>テイスティングメモ / 気づき</label>
+        <textarea id="tastingNotes" rows="2" placeholder="甘みがきれいに出た、少し抽出オーバーで苦味強め、など"></textarea>
+      </div>
+
+      <button class="btn-submit" onclick="saveBrewLog()">この抽出レシピを記録</button>
+    </div>
+  </div>
+
+  <div style="font-size:0.85rem; font-weight:700; color:var(--primary); margin: 0 0 8px 4px;">📜 過去の抽出ログ</div>
+  <ul class="log-list" id="logList"></ul>
+
+  <script>
+    // 挽き目の増減
+    function stepGrind(delta) {
+      const input = document.getElementById('grindSize');
+      let val = parseFloat(input.value) || 15;
+      val = Math.min(20, Math.max(10, val + delta));
+      input.value = val;
+    }
+
+    // タイマー管理
+    let timerRunning = false;
+    let timerSeconds = 0;
+    let timerInterval = null;
+
+    function toggleTimer() {
+      const btn = document.getElementById('btnTimerToggle');
+      if (timerRunning) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        btn.innerText = '再開';
+      } else {
+        timerRunning = true;
+        btn.innerText = '停止';
+        timerInterval = setInterval(() => {
+          timerSeconds++;
+          const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+          const s = String(timerSeconds % 60).padStart(2, '0');
+          document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timerSeconds = 0;
+      document.getElementById('timerDisplay').innerText = '00:00';
+      document.getElementById('btnTimerToggle').innerText = 'スタート';
+    }
+
+    function stampTimer() {
+      const m = Math.floor(timerSeconds / 60);
+      const s = String(timerSeconds % 60).padStart(2, '0');
+      document.getElementById('brewTime').value = `${m}:${s}`;
+    }
+
+    function calcRatio() {
+      const dose = parseFloat(document.getElementById('coffeeDose').value) || 0;
+      const water = parseFloat(document.getElementById('waterAmount').value) || 0;
+      const badge = document.getElementById('ratioBadge');
+      if (dose > 0 && water > 0) {
+        const ratio = (water / dose).toFixed(1);
+        badge.innerText = `抽出レシオ 1 : ${ratio}`;
+      } else {
+        badge.innerText = `抽出レシオ -`;
+      }
+    }
+
+    // 豆の履歴管理（直前に使った順 / LRU順）
+    let beanHistory = JSON.parse(localStorage.getItem('coffee_bean_history') || '[]');
+
+    function updateBeanHistory(beanName) {
+      if (!beanName || beanName === '名称未設定の豆') return;
+      // 既存の同じ豆を一度削除し、先頭（一番新しい位置）に追加
+      beanHistory = beanHistory.filter(name => name.toLowerCase() !== beanName.toLowerCase());
+      beanHistory.unshift(beanName);
+      // 直近15件まで保持
+      if (beanHistory.length > 15) beanHistory.pop();
+      localStorage.setItem('coffee_bean_history', JSON.stringify(beanHistory));
+      renderBeanChips();
+    }
+
+    function selectBean(name) {
+      document.getElementById('beanName').value = name;
+    }
+
+    function renderBeanChips() {
+      const container = document.getElementById('historyContainer');
+      const chipsArea = document.getElementById('beanChips');
+      chipsArea.innerHTML = '';
+
+      if (beanHistory.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'flex';
+      beanHistory.forEach(name => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip';
+        btn.innerText = name;
+        btn.onclick = () => selectBean(name);
+        chipsArea.appendChild(btn);
+      });
+    }
+
+    // 抽出ログ管理
+    let logs = JSON.parse(localStorage.getItem('coffee_brew_logs') || '[]');
+
+    function saveBrewLog() {
+      const beanName = document.getElementById('beanName').value.trim() || '名称未設定の豆';
+      const roast = document.getElementById('roastLevel').value;
+      const grind = document.getElementById('grindSize').value;
+      const dose = document.getElementById('coffeeDose').value;
+      const water = document.getElementById('waterAmount').value;
+      const temp = document.getElementById('waterTemp').value;
+      const time = document.getElementById('brewTime').value || '未記録';
+      const acidity = document.getElementById('tasteAcidity').value;
+      const bitterness = document.getElementById('tasteBitterness').value;
+      const body = document.getElementById('tasteBody').value;
+      const aroma = document.getElementById('tasteAroma').value;
+      const notes = document.getElementById('tastingNotes').value.trim();
+
+      const newLog = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        beanName, roast, grind, dose, water, temp, time,
+        tastes: { acidity, bitterness, body, aroma },
+        notes
+      };
+
+      logs.unshift(newLog);
+      localStorage.setItem('coffee_brew_logs', JSON.stringify(logs));
+
+      // 豆の履歴を更新
+      updateBeanHistory(beanName);
+
+      // 入力のリセット
+      document.getElementById('tastingNotes').value = '';
+      resetTimer();
+      renderLogs();
+    }
+
+    function deleteLog(id) {
+      if (confirm('この抽出ログを削除しますか？')) {
+        logs = logs.filter(l => l.id !== id);
+        localStorage.setItem('coffee_brew_logs', JSON.stringify(logs));
+        renderLogs();
+      }
+    }
+
+    function renderLogs() {
+      const list = document.getElementById('logList');
+      list.innerHTML = '';
+
+      if (logs.length === 0) {
+        list.innerHTML = '<li style="text-align:center;color:var(--muted);font-size:0.8rem;padding:20px;">まだ抽出記録がありません</li>';
+        return;
+      }
+
+      logs.forEach(log => {
+        const ratio = (log.water && log.dose) ? (log.water / log.dose).toFixed(1) : '-';
+        const li = document.createElement('li');
+        li.className = 'log-card';
+        li.innerHTML = `
+          <div class="log-header">
+            <span class="log-title">${escapeHtml(log.beanName)}</span>
+            <span class="log-date">${log.date}</span>
+          </div>
+          <div class="log-tags">
+            <span class="badge accent">${log.roast}</span>
+            <span class="badge grind">Grind: ${log.grind}</span>
+            <span class="badge">${log.dose}g ➔ ${log.water}ml (1:${ratio})</span>
+            <span class="badge">🌡 ${log.temp}°C</span>
+            <span class="badge">⏱ ${log.time}</span>
+          </div>
+          <div class="log-taste-bars">
+            <span>酸味:${log.tastes.acidity}</span>
+            <span>苦味:${log.tastes.bitterness}</span>
+            <span>コク:${log.tastes.body}</span>
+            <span>香り:${log.tastes.aroma}</span>
+          </div>
+          ${log.notes ? `<div class="log-notes">${escapeHtml(log.notes)}</div>` : ''}
+          <button class="btn-del" onclick="deleteLog(${log.id})">削除</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>'"]/g, t => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'
+      }[t] || t));
+    }
+
+    calcRatio();
+    renderBeanChips();
+    renderLogs();
+  </script>
+</body>
+</html>
