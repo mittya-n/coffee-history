@@ -17,6 +17,8 @@
       --tag-bg: #f5f5f4;
       --chip-bg: #f5efe6;
       --chip-text: #634832;
+      --star-active: #f59e0b;
+      --star-inactive: #d6d3d1;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
@@ -93,11 +95,7 @@
       gap: 4px;
       margin-top: 6px;
     }
-    .history-label {
-      font-size: 0.68rem;
-      color: var(--muted);
-      font-weight: 600;
-    }
+    .history-label { font-size: 0.68rem; color: var(--muted); font-weight: 600; }
     .history-chips {
       display: flex;
       gap: 6px;
@@ -118,18 +116,10 @@
       cursor: pointer;
       flex-shrink: 0;
     }
-    .chip:active {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
+    .chip:active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    /* 挽き目（Grind）ステッパーUI */
-    .stepper-container {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
+    /* 挽き目ステッパー */
+    .stepper-container { display: flex; align-items: center; gap: 4px; }
     .stepper-btn {
       background: #e7e5e4;
       border: none;
@@ -146,11 +136,7 @@
       flex-shrink: 0;
     }
     .stepper-btn:active { background: #d6d3d1; }
-    .stepper-input {
-      text-align: center;
-      font-weight: 700;
-      color: var(--primary);
-    }
+    .stepper-input { text-align: center; font-weight: 700; color: var(--primary); }
 
     .ratio-badge {
       display: inline-block;
@@ -159,6 +145,20 @@
       font-weight: 600;
       margin-top: 4px;
     }
+
+    /* 星評価（総合評価） */
+    .star-rating-box {
+      background: #fafaf9;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stars-interactive { display: flex; gap: 4px; font-size: 1.5rem; cursor: pointer; }
+    .star { color: var(--star-inactive); transition: color 0.15s ease; user-select: none; }
+    .star.filled { color: var(--star-active); }
 
     /* テイスティング評価スライダー */
     .taste-group {
@@ -187,7 +187,32 @@
       margin-top: 4px;
     }
 
-    /* ログ一覧 */
+    /* ログヘッダー＆フィルター */
+    .log-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 18px 4px 10px;
+    }
+    .log-section-title { font-size: 0.9rem; font-weight: 700; color: var(--primary); }
+    .filter-tabs { display: flex; gap: 4px; }
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* ログカード */
     .log-list { display: flex; flex-direction: column; gap: 10px; list-style: none; padding: 0; margin: 0; }
     .log-card {
       background: var(--card);
@@ -198,8 +223,14 @@
       flex-direction: column;
       gap: 6px;
     }
+    .log-card.highlight {
+      border: 1.5px solid #f59e0b;
+      background: #fffdfa;
+    }
     .log-header { display: flex; justify-content: space-between; align-items: baseline; }
+    .log-title-area { display: flex; align-items: center; gap: 6px; }
     .log-title { font-weight: 700; font-size: 0.95rem; color: var(--primary); }
+    .log-stars { color: var(--star-active); font-size: 0.85rem; letter-spacing: 1px; }
     .log-date { font-size: 0.72rem; color: var(--muted); }
     .log-tags { display: flex; gap: 4px; flex-wrap: wrap; }
     .badge {
@@ -311,7 +342,22 @@
         </div>
       </div>
 
-      <!-- 味の評価（スライダー） -->
+      <!-- 最終総合評価（星1〜5） -->
+      <div>
+        <label>総合評価 (Overall)</label>
+        <div class="star-rating-box">
+          <span style="font-size:0.8rem; font-weight:600; color:var(--primary);" id="ratingText">★ 4 (満足)</span>
+          <div class="stars-interactive" id="starContainer">
+            <span class="star filled" onclick="setRating(1)">★</span>
+            <span class="star filled" onclick="setRating(2)">★</span>
+            <span class="star filled" onclick="setRating(3)">★</span>
+            <span class="star filled" onclick="setRating(4)">★</span>
+            <span class="star" onclick="setRating(5)">★</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 味覚プロファイル -->
       <div>
         <label>味覚プロファイル (1〜5)</label>
         <div class="taste-group">
@@ -336,18 +382,46 @@
 
       <div>
         <label>テイスティングメモ / 気づき</label>
-        <textarea id="tastingNotes" rows="2" placeholder="甘みがきれいに出た、少し抽出オーバーで苦味強め、など"></textarea>
+        <textarea id="tastingNotes" rows="2" placeholder="甘みがきれいに出た、次回は少し粗く挽いてみる、など"></textarea>
       </div>
 
       <button class="btn-submit" onclick="saveBrewLog()">この抽出レシピを記録</button>
     </div>
   </div>
 
-  <div style="font-size:0.85rem; font-weight:700; color:var(--primary); margin: 0 0 8px 4px;">📜 過去の抽出ログ</div>
+  <!-- ログ一覧とフィルタータブ -->
+  <div class="log-section-header">
+    <div class="log-section-title">📜 抽出ログ</div>
+    <div class="filter-tabs">
+      <button class="tab-btn active" id="tabAll" onclick="setFilter('all')">すべて</button>
+      <button class="tab-btn" id="tabStars" onclick="setFilter('5stars')">★5 のみ</button>
+    </div>
+  </div>
+
   <ul class="log-list" id="logList"></ul>
 
   <script>
-    // 挽き目の増減
+    // 総合評価（星評価）
+    let currentRating = 4;
+    const ratingLabels = {
+      1: '★ 1 (要調整)',
+      2: '★ 2 (いまいち)',
+      3: '★ 3 (ふつう)',
+      4: '★ 4 (満足)',
+      5: '★ 5 (最高の一杯！)'
+    };
+
+    function setRating(val) {
+      currentRating = val;
+      document.getElementById('ratingText').innerText = ratingLabels[val];
+      const stars = document.querySelectorAll('#starContainer .star');
+      stars.forEach((star, idx) => {
+        if (idx < val) star.classList.add('filled');
+        else star.classList.remove('filled');
+      });
+    }
+
+    // 挽き目ステッパー
     function stepGrind(delta) {
       const input = document.getElementById('grindSize');
       let val = parseFloat(input.value) || 15;
@@ -355,7 +429,7 @@
       input.value = val;
     }
 
-    // タイマー管理
+    // タイマー
     let timerRunning = false;
     let timerSeconds = 0;
     let timerInterval = null;
@@ -404,15 +478,13 @@
       }
     }
 
-    // 豆の履歴管理（直前に使った順 / LRU順）
+    // 豆の履歴
     let beanHistory = JSON.parse(localStorage.getItem('coffee_bean_history') || '[]');
 
     function updateBeanHistory(beanName) {
       if (!beanName || beanName === '名称未設定の豆') return;
-      // 既存の同じ豆を一度削除し、先頭（一番新しい位置）に追加
       beanHistory = beanHistory.filter(name => name.toLowerCase() !== beanName.toLowerCase());
       beanHistory.unshift(beanName);
-      // 直近15件まで保持
       if (beanHistory.length > 15) beanHistory.pop();
       localStorage.setItem('coffee_bean_history', JSON.stringify(beanHistory));
       renderBeanChips();
@@ -443,8 +515,16 @@
       });
     }
 
-    // 抽出ログ管理
+    // ログ管理＆フィルター
     let logs = JSON.parse(localStorage.getItem('coffee_brew_logs') || '[]');
+    let currentFilter = 'all';
+
+    function setFilter(type) {
+      currentFilter = type;
+      document.getElementById('tabAll').classList.toggle('active', type === 'all');
+      document.getElementById('tabStars').classList.toggle('active', type === '5stars');
+      renderLogs();
+    }
 
     function saveBrewLog() {
       const beanName = document.getElementById('beanName').value.trim() || '名称未設定の豆';
@@ -464,6 +544,7 @@
         id: Date.now(),
         date: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
         beanName, roast, grind, dose, water, temp, time,
+        rating: currentRating,
         tastes: { acidity, bitterness, body, aroma },
         notes
       };
@@ -471,10 +552,7 @@
       logs.unshift(newLog);
       localStorage.setItem('coffee_brew_logs', JSON.stringify(logs));
 
-      // 豆の履歴を更新
       updateBeanHistory(beanName);
-
-      // 入力のリセット
       document.getElementById('tastingNotes').value = '';
       resetTimer();
       renderLogs();
@@ -492,18 +570,31 @@
       const list = document.getElementById('logList');
       list.innerHTML = '';
 
-      if (logs.length === 0) {
-        list.innerHTML = '<li style="text-align:center;color:var(--muted);font-size:0.8rem;padding:20px;">まだ抽出記録がありません</li>';
+      const filteredLogs = currentFilter === '5stars' 
+        ? logs.filter(l => (l.rating || 0) === 5)
+        : logs;
+
+      if (filteredLogs.length === 0) {
+        const msg = currentFilter === '5stars' 
+          ? '★5 の殿堂入りレシピはまだありません' 
+          : 'まだ抽出記録がありません';
+        list.innerHTML = `<li style="text-align:center;color:var(--muted);font-size:0.8rem;padding:24px;">${msg}</li>`;
         return;
       }
 
-      logs.forEach(log => {
+      filteredLogs.forEach(log => {
         const ratio = (log.water && log.dose) ? (log.water / log.dose).toFixed(1) : '-';
+        const rating = log.rating || 3;
+        const starStr = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+
         const li = document.createElement('li');
-        li.className = 'log-card';
+        li.className = `log-card ${rating === 5 ? 'highlight' : ''}`;
         li.innerHTML = `
           <div class="log-header">
-            <span class="log-title">${escapeHtml(log.beanName)}</span>
+            <div class="log-title-area">
+              <span class="log-title">${escapeHtml(log.beanName)}</span>
+              <span class="log-stars">${starStr}</span>
+            </div>
             <span class="log-date">${log.date}</span>
           </div>
           <div class="log-tags">
